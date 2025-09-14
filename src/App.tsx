@@ -1,5 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import { Bell, CalendarClock, CheckCircle2, ChevronDown, CircleDot, Download, Eye, Home, Link as LinkIcon, PauseCircle, Pencil, Plus, Search, Settings, User2, Users, Wrench, X } from 'lucide-react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
+import {
+  Bell, CalendarClock, CheckCircle2, ChevronDown, CircleDot, Download, Eye,
+  Home, Link as LinkIcon, PauseCircle, Pencil, Plus, Search, Settings, User2, Users, Wrench, X
+} from 'lucide-react'
+import './index.css'
 
 type Estado = 'En proceso' | 'En pausa' | 'Completado'
 type Proyecto = {
@@ -20,37 +24,90 @@ function pillClass(estado: Estado) {
 }
 
 export default function App() {
-  const [query, setQuery] = useState('')
-  const [porPagina, setPorPagina] = useState(10)
-  const [page, setPage] = useState(1)
-  const [filterResponsable, setFilterResponsable] = useState('')
-  const [filterEstado, setFilterEstado] = useState<Estado | ''>('')
+  // --- Persistencia ---
+  const STORAGE_KEY = 'assem.proyectos.v1'
+  const UI_KEY = 'assem.ui.v1'
 
-  const [proyectos, setProyectos] = useState<Proyecto[]>([
+  const ui0 = (() => {
+    try { return JSON.parse(localStorage.getItem(UI_KEY) || 'null') } catch { return null }
+  })()
+
+  // --- Estado UI (lee de localStorage si existe) ---
+  const [query, setQuery] = useState<string>(ui0?.query ?? '')
+  const [porPagina, setPorPagina] = useState<number>(ui0?.porPagina ?? 10)
+  const [page, setPage] = useState<number>(ui0?.page ?? 1)
+  const [filterResponsable, setFilterResponsable] = useState<string>(ui0?.filterResponsable ?? '')
+  const [filterEstado, setFilterEstado] = useState<Estado | ''>(ui0?.filterEstado ?? '')
+
+  // --- Dropdowns de filtros (abrir/cerrar correctamente) ---
+  const [openResp, setOpenResp] = useState(false)
+  const [openEstado, setOpenEstado] = useState(false)
+  const respRef = useRef<HTMLDivElement>(null)
+  const estadoRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (!respRef.current?.contains(t)) setOpenResp(false)
+      if (!estadoRef.current?.contains(t)) setOpenEstado(false)
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
+
+  // --- Datos demo + persistencia ---
+  const defaultProyectos: Proyecto[] = [
     {id:'1', codigo:'PE 232 - 2025', proyecto:'DISEÑO DE INSTALACIONES SANITARIAS Y ELÉCTRICAS DUPLEX FRANCIA', responsable:'Josh Haresh Martinez Samaniego', fechaInicio:'04-09-2025', fechaFin:'10-09-2025', clientes:['Robles Mendoza','Carlos Yu-Yi'], estado:'En proceso'},
     {id:'2', codigo:'PE 226 - 2025', proyecto:'ELABORACIÓN DE PLANOS AS BUILT DE ARQUITECTURA Y ESPECIALIDADES DE VIVIENDA UNIFAMILIAR', responsable:'Luis Alex Gonzalez Salsavilca', fechaInicio:'10-09-2025', fechaFin:'29-09-2025', clientes:['Cervantes Teodoro','Maximiliana Felicita'], estado:'En proceso'},
     {id:'3', codigo:'PE 184 - 2025', proyecto:'IIISS PARA TELEFÓNICA DEL PERÚ – EDIFICIO SURQUILLO PISO 5', responsable:'Josh Haresh Martinez Samaniego', fechaInicio:'11-07-2025', fechaFin:'18-07-2025', clientes:['Bosch Arquitectos Perú S.R.L.'], estado:'En proceso'},
-  ])
+  ]
 
+  const [proyectos, setProyectos] = useState<Proyecto[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? (JSON.parse(raw) as Proyecto[]) : defaultProyectos
+    } catch {
+      return defaultProyectos
+    }
+  })
+
+  // Guarda proyectos y estado de UI
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(proyectos)) } catch {}
+  }, [proyectos])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(UI_KEY, JSON.stringify({ query, porPagina, page, filterResponsable, filterEstado }))
+    } catch {}
+  }, [query, porPagina, page, filterResponsable, filterEstado])
+
+  // --- Derivados / paginación ---
   const filtered = useMemo(() => {
     const q = query.toLowerCase()
-    return proyectos.filter(p => (p.codigo + ' ' + p.proyecto + ' ' + p.responsable + ' ' + p.clientes.join(' ')).toLowerCase().includes(q))
+    return proyectos.filter(p =>
+      (p.codigo + ' ' + p.proyecto + ' ' + p.responsable + ' ' + p.clientes.join(' ')).toLowerCase().includes(q)
+    )
   }, [proyectos, query])
 
   const responsablesOptions = useMemo(() => Array.from(new Set(filtered.map(p => p.responsable))).sort(), [filtered])
   const estadosOptions = useMemo(() => Array.from(new Set(filtered.map(p => p.estado))), [filtered])
 
-  const filtered2 = useMemo(() => filtered.filter(p => (!filterResponsable || p.responsable === filterResponsable) && (!filterEstado || p.estado === filterEstado)), [filtered, filterResponsable, filterEstado])
+  const filtered2 = useMemo(
+    () => filtered.filter(p => (!filterResponsable || p.responsable === filterResponsable) && (!filterEstado || p.estado === filterEstado)),
+    [filtered, filterResponsable, filterEstado]
+  )
 
   const pages = useMemo(() => Math.max(1, Math.ceil(filtered2.length / porPagina)), [filtered2, porPagina])
-  useEffect(()=>{ if(page > pages) setPage(pages) }, [pages])
-  useEffect(()=>{ setPage(1) }, [porPagina, query, filterResponsable, filterEstado])
+  useEffect(() => { if (page > pages) setPage(pages) }, [pages])
+  useEffect(() => { setPage(1) }, [porPagina, query, filterResponsable, filterEstado])
 
   const current = useMemo(() => {
     const start = (page - 1) * porPagina
     return filtered2.slice(start, start + porPagina)
   }, [filtered2, page, porPagina])
 
+  // --- Crear proyecto (modal simple controlado desde el DOM) ---
   const [showCrono, setShowCrono] = useState(false)
   const [showNuevo, setShowNuevo] = useState(false)
 
@@ -70,7 +127,7 @@ export default function App() {
 
   const exportCSV = () => {
     const header = ['Código','Proyecto','Responsable','Fecha de inicio','Fecha final','Clientes','Estado']
-    const lines = current.map(r => [r.codigo, '"' + r.proyecto.replace(/"/g,'""') + '"', r.responsable, r.fechaInicio, r.fechaFin, '"' + r.clientes.join('; ') + '"', r.estado].join(','))
+    const lines = current.map(r => [r.codigo, '\"' + r.proyecto.replace(/\"/g,'\"\"') + '\"', r.responsable, r.fechaInicio, r.fechaFin, '\"' + r.clientes.join('; ') + '\"', r.estado].join(','))
     const csv = [header.join(','), ...lines].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -135,25 +192,45 @@ export default function App() {
                   </div>
 
                   {/* Responsable */}
-                  <div className="dropdown">
-                    <button className="btn btn-outline gap-2"><span>{filterResponsable ? `Responsable: ${filterResponsable}` : 'Responsable'}</span><ChevronDown className="h-4 w-4"/></button>
-                    <div className="dropdown-menu">
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50" onClick={()=>setFilterResponsable('')}>Todos</button>
-                      {responsablesOptions.map(r => (
-                        <button key={r} className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50" onClick={()=>setFilterResponsable(r)}>{r}</button>
-                      ))}
-                    </div>
+                  <div className="dropdown" ref={respRef}>
+                    <button
+                      className="btn btn-outline gap-2"
+                      onClick={(e) => { e.stopPropagation(); setOpenResp(v => !v); setOpenEstado(false); }}
+                    >
+                      <span>{filterResponsable ? `Responsable: ${filterResponsable}` : 'Responsable'}</span>
+                      <ChevronDown className="h-4 w-4"/>
+                    </button>
+                    {openResp && (
+                      <div className="dropdown-menu">
+                        <button className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50"
+                                onClick={() => { setFilterResponsable(''); setOpenResp(false); }}>Todos</button>
+                        {responsablesOptions.map(r => (
+                          <button key={r} className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50"
+                                  onClick={() => { setFilterResponsable(r); setOpenResp(false); }}>{r}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Estado */}
-                  <div className="dropdown">
-                    <button className="btn btn-outline gap-2"><span>{filterEstado ? `Estado: ${filterEstado}` : 'Estado'}</span><ChevronDown className="h-4 w-4"/></button>
-                    <div className="dropdown-menu">
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50" onClick={()=>setFilterEstado('')}>Todos</button>
-                      {estadosOptions.map(e => (
-                        <button key={e} className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50" onClick={()=>setFilterEstado(e)}>{e}</button>
-                      ))}
-                    </div>
+                  <div className="dropdown" ref={estadoRef}>
+                    <button
+                      className="btn btn-outline gap-2"
+                      onClick={(e) => { e.stopPropagation(); setOpenEstado(v => !v); setOpenResp(false); }}
+                    >
+                      <span>{filterEstado ? `Estado: ${filterEstado}` : 'Estado'}</span>
+                      <ChevronDown className="h-4 w-4"/>
+                    </button>
+                    {openEstado && (
+                      <div className="dropdown-menu">
+                        <button className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50"
+                                onClick={() => { setFilterEstado(''); setOpenEstado(false); }}>Todos</button>
+                        {estadosOptions.map(e => (
+                          <button key={e} className="w-full text-left px-3 py-2 rounded-md hover:bg-slate-50"
+                                  onClick={() => { setFilterEstado(e); setOpenEstado(false); }}>{e}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 text-sm">
