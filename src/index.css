@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* (Opcional) Scrollbar global visible en navegadores con -webkit- */
+:root {
+  /* Solo estiliza; no obliga a que aparezca si no hay overflow */
+  scrollbar-color: #94a3b8 #e2e8f0; /* Firefox */
+}
+
 /* small utilities to mimic card/button styles */
 .card { @apply rounded-2xl border shadow-sm; }
 .btn { @apply inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm; }
