@@ -350,7 +350,7 @@ export default function AssemProjectsDashboard() {
     <div className="min-h-screen bg-white text-slate-800 text-[13px] leading-tight">
       {/* Top bar */}
       <div className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-2">
+        <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
               AS
@@ -370,7 +370,7 @@ export default function AssemProjectsDashboard() {
       </div>
 
       {/* Layout */}
-      <div className="mx-auto grid max-w-screen-2xl grid-cols-12 gap-6 px-4 py-4">
+      <div className="mx-auto grid max-w-screen-xl grid-cols-12 gap-6 px-4 py-4">
         {/* Sidebar */}
         <aside className="col-span-12 h-fit rounded-2xl border bg-white p-3 md:sticky md:top-20 md:col-span-3">
           <SidebarItem icon={Home} label="Home" />
@@ -483,8 +483,8 @@ export default function AssemProjectsDashboard() {
                 </div>
               )}
 
-              <div className="overflow-x-auto overflow-y-hidden rounded-2xl border">
-                <Table className="min-w-[1280px]">
+              <div className="overflow-x-scroll overflow-y-hidden rounded-2xl border">
+                <Table className="min-w-[1800px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="w-28 md:w-[120px]">CÓDIGO</TableHead>
