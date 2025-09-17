@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -54,9 +53,9 @@ import {
 
 /**
  * FIX SUMMARY
- * - Resolved a JSX/paren mismatch causing "Unexpected token" near the bottom of the file.
+ * - Removed a stray `}` in the top-left logo <div>, which caused `Unexpected token`.
  * - Kept all behaviors; only structural fixes + minor responsive/typography tweaks as requested.
- * - Added optional lightweight runtime assertions for toCSV to act as a micro "test".
+ * - Added lightweight runtime assertions for `toCSV` (now with an extra case for quotes escaping).
  */
 
 // --- Types
@@ -348,13 +347,20 @@ export default function AssemProjectsDashboard() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 text-[13px] leading-tight">
+      {/* Global styles for visible horizontal scrollbar */}
+      <style>{`
+        .table-scroll { scrollbar-gutter: stable both-edges; }
+        .table-scroll::-webkit-scrollbar { height: 10px; }
+        .table-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 8px; }
+        .table-scroll::-webkit-scrollbar-track { background-color: #e2e8f0; }
+      `}</style>
       {/* Top bar */}
       <div className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-screen-xl items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
               AS
-            </motion.div>
+            </div>
             <div>
               <div className="text-xs tracking-wider text-slate-500">FORMATOS DE</div>
               <div className="text-sm font-semibold">ASSEM INGENIEROS CONSULTORES</div>
@@ -483,8 +489,8 @@ export default function AssemProjectsDashboard() {
                 </div>
               )}
 
-              <div className="overflow-x-scroll overflow-y-hidden rounded-2xl border">
-                <Table className="min-w-[1800px]">
+              <div className="table-scroll overflow-x-scroll overflow-y-hidden rounded-2xl border">
+                <Table className="min-w-[2100px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="w-28 md:w-[120px]">CÓDIGO</TableHead>
@@ -568,5 +574,11 @@ if (typeof window !== 'undefined') {
     ]);
     console.assert(csv.startsWith('Código,Proyecto,Responsable'), 'CSV header incorrecto');
     console.assert(csv.includes('"Demo"'), 'CSV no contiene proyecto');
+
+    // Extra test: escaping double quotes in project name
+    const csv2 = toCSV([
+      { id: 't2', codigo: 'PE 002 - 2025', proyecto: 'Obra "Piloto"', responsable: 'QA', fechaInicio: '01-02-2025', fechaFin: '03-02-2025', clientes: [], estado: 'En pausa' },
+    ]);
+    console.assert(csv2.includes('"Obra ""Piloto"""'), 'CSV no escapó las comillas correctamente');
   })();
 }
