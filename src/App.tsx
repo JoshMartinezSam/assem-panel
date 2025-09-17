@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -35,6 +35,8 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleDot,
   Download,
   Eye,
@@ -257,6 +259,16 @@ export default function AssemProjectsDashboard() {
   const [page, setPage] = useState(1);
   const [filterResponsable, setFilterResponsable] = useState("");
   const [filterEstado, setFilterEstado] = useState<Estado | ''>("");
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const updateScrollControls = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 8);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 8);
+  }, []);
   const STORAGE_KEY = "assem.proyectos.v1";
 
   const DEMO_PROYECTOS: Proyecto[] = [
@@ -346,10 +358,49 @@ export default function AssemProjectsDashboard() {
     return filtered2.slice(start, start + porPagina);
   }, [filtered2, page, porPagina]);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = () => updateScrollControls();
+    const handleWindowResize = () => updateScrollControls();
+
+    updateScrollControls();
+    el.addEventListener("scroll", handleScroll);
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => updateScrollControls());
+      resizeObserver.observe(el);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleWindowResize);
+    }
+
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      resizeObserver?.disconnect();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleWindowResize);
+      }
+    };
+  }, [updateScrollControls]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = window.requestAnimationFrame(() => updateScrollControls());
+    return () => window.cancelAnimationFrame(id);
+  }, [current, updateScrollControls]);
+
   const descargarExcel = () => descargar(
     `proyectos-assem-${new Date().toISOString().slice(0,10)}.csv`,
     toCSV(current)
   );
+
+  const scrollHorizontally = (delta: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: delta, behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-800 text-[13px] leading-tight">
@@ -495,8 +546,12 @@ export default function AssemProjectsDashboard() {
                 </div>
               )}
 
-              <div className="table-scroll overflow-x-scroll overflow-y-hidden rounded-2xl border">
-                <Table className="min-w-[2100px]">
+              <div className="relative">
+                <div
+                  ref={scrollRef}
+                  className="table-scroll overflow-x-auto overflow-y-hidden rounded-2xl border bg-white"
+                >
+                  <Table className="min-w-[2100px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="w-28 md:w-[120px]">CÓDIGO</TableHead>
@@ -546,7 +601,42 @@ export default function AssemProjectsDashboard() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
+                {(canScrollLeft || canScrollRight) && (
+                  <>
+                    {canScrollLeft && (
+                      <>
+                        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 rounded-l-2xl bg-gradient-to-r from-white via-white/80 to-transparent" aria-hidden="true" />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="absolute left-3 top-1/2 z-20 h-8 w-8 -translate-y-1/2 rounded-full border border-slate-200 bg-white/90 shadow-md backdrop-blur"
+                          onClick={() => scrollHorizontally(-320)}
+                          aria-label="Desplazar tabla a la izquierda"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    {canScrollRight && (
+                      <>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 rounded-r-2xl bg-gradient-to-l from-white via-white/80 to-transparent" aria-hidden="true" />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="absolute right-3 top-1/2 z-20 h-8 w-8 -translate-y-1/2 rounded-full border border-slate-200 bg-white/90 shadow-md backdrop-blur"
+                          onClick={() => scrollHorizontally(320)}
+                          aria-label="Desplazar tabla a la derecha"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="flex items-center justify-between px-3 py-3 text-sm">
