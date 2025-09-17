@@ -181,31 +181,31 @@ function useNuevoProyecto(onAdd: (p: Proyecto) => void) {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Código</label>
-            <Input value={form.codigo} onChange={(e)=>setForm({...form, codigo:e.target.value})} placeholder="PE 000 - 2025"/>
+            <Input value={form.codigo} onChange={(e: any)=>setForm({...form, codigo:e.target.value})} placeholder="PE 000 - 2025"/>
           </div>
           <div className="space-y-1 md:col-span-2">
             <label className="text-xs text-muted-foreground">Proyecto</label>
-            <Input value={form.proyecto} onChange={(e)=>setForm({...form, proyecto:e.target.value})} placeholder="Descripción del proyecto"/>
+            <Input value={form.proyecto} onChange={(e: any)=>setForm({...form, proyecto:e.target.value})} placeholder="Descripción del proyecto"/>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Responsable</label>
-            <Input value={form.responsable} onChange={(e)=>setForm({...form, responsable:e.target.value})} placeholder="Nombre"/>
+            <Input value={form.responsable} onChange={(e: any)=>setForm({...form, responsable:e.target.value})} placeholder="Nombre"/>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Clientes (separa por coma)</label>
-            <Input value={form.clientes} onChange={(e)=>setForm({...form, clientes:e.target.value})} placeholder="Cliente A, Cliente B"/>
+            <Input value={form.clientes} onChange={(e: any)=>setForm({...form, clientes:e.target.value})} placeholder="Cliente A, Cliente B"/>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Fecha inicio</label>
-            <Input value={form.fechaInicio} onChange={(e)=>setForm({...form, fechaInicio:e.target.value})} placeholder="dd-mm-aaaa"/>
+            <Input value={form.fechaInicio} onChange={(e: any)=>setForm({...form, fechaInicio:e.target.value})} placeholder="dd-mm-aaaa"/>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Fecha final</label>
-            <Input value={form.fechaFin} onChange={(e)=>setForm({...form, fechaFin:e.target.value})} placeholder="dd-mm-aaaa"/>
+            <Input value={form.fechaFin} onChange={(e: any)=>setForm({...form, fechaFin:e.target.value})} placeholder="dd-mm-aaaa"/>
           </div>
           <div className="space-y-1 md:col-span-2">
             <label className="text-xs text-muted-foreground">Estado</label>
-            <EstadoPill estado={form.estado} onChange={(e)=>setForm({...form, estado:e})}/>
+            <EstadoPill estado={form.estado} onChange={(e: any)=>setForm({...form, estado:e})}/>
           </div>
         </div>
         <DialogFooter>
@@ -465,7 +465,7 @@ export default function AssemProjectsDashboard() {
                           <div className="truncate font-medium">{p.codigo}</div>
                           <div className="col-span-2 truncate" title={p.proyecto}>{p.proyecto}</div>
                           <div>
-                            <EstadoPill estado={p.estado} onChange={(e)=>setProyectos(prev=>prev.map(x=>x.id===p.id?{...x, estado:e}:x))}/>
+                            <EstadoPill estado={p.estado} onChange={(e: any)=>setProyectos(prev=>prev.map(x=>x.id===p.id?{...x, estado:e}:x))}/>
                           </div>
                         </div>
                       ))}
@@ -482,7 +482,7 @@ export default function AssemProjectsDashboard() {
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/>
-                    <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Búsqueda" className="pl-8 w-72"/>
+                    <Input value={query} onChange={(e: any)=>setQuery(e.target.value)} placeholder="Búsqueda" className="pl-8 w-72"/>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -517,7 +517,7 @@ export default function AssemProjectsDashboard() {
                     <select
                       className="rounded-md border px-2 py-1 text-sm"
                       value={porPagina}
-                      onChange={(e)=>setPorPagina(parseInt(e.target.value))}
+                      onChange={(e: any)=>setPorPagina(parseInt(e.target.value))}
                     >
                       {[10,25,50].map(n=> <option key={n} value={n}>{n}</option>)}
                     </select>
@@ -595,7 +595,7 @@ export default function AssemProjectsDashboard() {
                         <TableCell>
                           <EstadoPill
                             estado={p.estado}
-                            onChange={(e)=>setProyectos(prev=>prev.map(x=>x.id===p.id?{...x, estado:e}:x))}
+                            onChange={(e: any)=>setProyectos(prev=>prev.map(x=>x.id===p.id?{...x, estado:e}:x))}
                           />
                         </TableCell>
                       </TableRow>
