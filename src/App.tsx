@@ -86,6 +86,12 @@ function estadoConfig(estado: Estado) {
   }
 }
 
+function escapeCsvValue(value: string) {
+  const normalized = `${value ?? ""}`;
+  const escaped = normalized.replace(/"/g, '""');
+  return /[",\n\r]/.test(normalized) ? `"${escaped}"` : escaped;
+}
+
 export function toCSV(rows: Proyecto[]) {
   const header = [
     "Código",
@@ -98,13 +104,13 @@ export function toCSV(rows: Proyecto[]) {
   ];
   const lines = rows.map((r) =>
     [
-      r.codigo,
-      '"' + r.proyecto.replace(/"/g, '""') + '"',
-      r.responsable,
-      r.fechaInicio,
-      r.fechaFin,
-      '"' + r.clientes.join("; ") + '"',
-      r.estado,
+      escapeCsvValue(r.codigo),
+      escapeCsvValue(r.proyecto),
+      escapeCsvValue(r.responsable),
+      escapeCsvValue(r.fechaInicio),
+      escapeCsvValue(r.fechaFin),
+      escapeCsvValue(r.clientes.join("; ")),
+      escapeCsvValue(r.estado),
     ].join(",")
   );
   return [header.join(","), ...lines].join("\n");
@@ -580,5 +586,11 @@ if (typeof window !== 'undefined') {
       { id: 't2', codigo: 'PE 002 - 2025', proyecto: 'Obra "Piloto"', responsable: 'QA', fechaInicio: '01-02-2025', fechaFin: '03-02-2025', clientes: [], estado: 'En pausa' },
     ]);
     console.assert(csv2.includes('"Obra ""Piloto"""'), 'CSV no escapó las comillas correctamente');
+
+    const csv3 = toCSV([
+      { id: 't3', codigo: 'PE 003 - 2025', proyecto: 'Alpha', responsable: 'Doe, John', fechaInicio: '01-03-2025', fechaFin: '05-03-2025', clientes: ['Cliente "A"', 'Cliente B'], estado: 'Completado' },
+    ]);
+    console.assert(csv3.includes('"Doe, John"'), 'CSV no escapó la coma en responsable');
+    console.assert(csv3.includes('"Cliente ""A""; Cliente B"'), 'CSV no escapó las comillas en clientes');
   })();
 }
